@@ -1,7 +1,7 @@
 import streamlit as st
 from deep_translator import GoogleTranslator
+from streamlit_mic_recorder import speech_to_text
 from utils.languages import languages
-from voice_utils import recognize_speech, speak_text
 
 # Page configuration
 st.set_page_config(
@@ -67,7 +67,6 @@ st.sidebar.info(
     ### Features
     ✅ Multi-language translation
     ✅ Voice input
-    ✅ Voice output
     ✅ Translation history
     ✅ Character counter
     ✅ Download translations
@@ -105,12 +104,20 @@ if "input_text" not in st.session_state:
 # LEFT COLUMN
 with col1:
 
-    if st.button("🎤 Speak"):
-        spoken_text = recognize_speech()
+    st.subheader("🎤 Voice Input")
 
-        if spoken_text:
-            st.session_state.input_text = spoken_text
-            st.success(f"You said: {spoken_text}")
+    spoken_text = speech_to_text(
+        language="en",
+        start_prompt="🎤 Start Recording",
+        stop_prompt="⏹ Stop Recording",
+        just_once=True,
+        use_container_width=True,
+        key="voice_input"
+    )
+
+    if spoken_text:
+        st.session_state.input_text = spoken_text
+        st.success(f"You said: {spoken_text}")
 
     text = st.text_area(
         "✍ Enter Text",
@@ -154,11 +161,10 @@ if st.button("🚀 Translate Now"):
 
             st.code(translated_text)
 
-            # Speak translation
-            if st.button("🔊 Speak Translation"):
-                speak_text(translated_text)
+            st.info(
+                "🔊 Voice output is not available in Streamlit Cloud deployment."
+            )
 
-            # Download button
             st.download_button(
                 label="⬇ Download Translation",
                 data=translated_text,
@@ -166,7 +172,6 @@ if st.button("🚀 Translate Now"):
                 mime="text/plain"
             )
 
-            # Save history
             st.session_state.history.append({
                 "input": text,
                 "output": translated_text,
@@ -201,5 +206,5 @@ if st.session_state.history:
 st.markdown("---")
 
 st.caption(
-    "Built with ❤️ using Python, Streamlit, Speech Recognition & Deep Translator"
+    "Built with ❤️ using Python, Streamlit, Deep Translator & Browser Voice Recognition"
 )
