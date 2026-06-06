@@ -3,105 +3,114 @@ from deep_translator import GoogleTranslator
 from streamlit_mic_recorder import speech_to_text
 from utils.languages import languages
 
-# Page configuration
+# ---------------- PAGE CONFIG ---------------- #
+
 st.set_page_config(
-    page_title="AI Voice Translation Assistant",
+    page_title="Smart Translator Pro",
     page_icon="🌍",
     layout="wide"
 )
 
-# Custom CSS
+# ---------------- SESSION STATE ---------------- #
+
+if "history" not in st.session_state:
+    st.session_state.history = []
+
+if "input_text" not in st.session_state:
+    st.session_state.input_text = ""
+
+# ---------------- CSS ---------------- #
+
 st.markdown("""
 <style>
 
-.main {
-    background-color: #0E1117;
-    color: white;
+.main{
+    background-color:#0E1117;
 }
 
-.title {
-    text-align: center;
-    font-size: 55px;
-    font-weight: bold;
-    color: #4CAF50;
-    margin-bottom: 10px;
+.title{
+    text-align:center;
+    font-size:55px;
+    font-weight:bold;
+    color:#4CAF50;
 }
 
-.subtitle {
-    text-align: center;
-    color: #AAAAAA;
-    margin-bottom: 40px;
-    font-size: 22px;
+.subtitle{
+    text-align:center;
+    color:#AAAAAA;
+    font-size:20px;
+    margin-bottom:30px;
 }
 
-.stButton > button {
-    width: 100%;
-    background-color: #4CAF50;
-    color: white;
-    border-radius: 12px;
-    height: 3.2em;
-    font-size: 18px;
-    font-weight: bold;
-}
-
-.stTextArea textarea {
-    font-size: 18px;
-}
-
-.history-box {
-    padding: 15px;
-    border-radius: 10px;
-    background-color: #1E1E1E;
-    margin-bottom: 15px;
-    color: white;
+.metric-card{
+    background:#1E1E1E;
+    padding:15px;
+    border-radius:10px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# Sidebar
-st.sidebar.title("🌍 AI Voice Translator")
+# ---------------- SIDEBAR ---------------- #
 
-st.sidebar.info(
-    """
-    ### Features
-    ✅ Multi-language translation
-    ✅ Voice input
-    ✅ Translation history
-    ✅ Character counter
-    ✅ Download translations
-    ✅ Interactive UI
-    """
+st.sidebar.title("🌍 Smart Translator Pro")
+
+total_translations = len(st.session_state.history)
+
+total_characters = sum(
+    len(item["input"])
+    for item in st.session_state.history
 )
 
-# Initialize history
-if "history" not in st.session_state:
-    st.session_state.history = []
+st.sidebar.metric(
+    "Total Translations",
+    total_translations
+)
 
-# Clear history
+st.sidebar.metric(
+    "Characters Processed",
+    total_characters
+)
+
+st.sidebar.markdown("---")
+
+st.sidebar.markdown("""
+### ⚡ Features
+
+✅ Voice Input
+
+✅ Text Translation
+
+✅ 100+ Languages
+
+✅ Translation History
+
+✅ Download Results
+
+✅ Cloud Compatible
+""")
+
 if st.sidebar.button("🗑 Clear History"):
     st.session_state.history = []
 
-# Title
+# ---------------- HEADER ---------------- #
+
 st.markdown(
-    '<div class="title">🌍 AI Voice Translation Assistant</div>',
+    '<div class="title">🌍 Smart Translator Pro</div>',
     unsafe_allow_html=True
 )
 
-# Subtitle
 st.markdown(
-    '<div class="subtitle">Speak, Translate & Listen using AI + NLP</div>',
+    '<div class="subtitle">Professional AI Language Translation Platform</div>',
     unsafe_allow_html=True
 )
 
-# Layout
+# ---------------- LAYOUT ---------------- #
+
 col1, col2 = st.columns(2)
 
-# Initialize input text
-if "input_text" not in st.session_state:
-    st.session_state.input_text = ""
+# ---------------- LEFT ---------------- #
 
-# LEFT COLUMN
 with col1:
 
     st.subheader("🎤 Voice Input")
@@ -123,12 +132,13 @@ with col1:
         "✍ Enter Text",
         value=st.session_state.input_text,
         height=250,
-        placeholder="Type your text here..."
+        placeholder="Type or speak your text..."
     )
 
     st.session_state.input_text = text
 
-# RIGHT COLUMN
+# ---------------- RIGHT ---------------- #
+
 with col2:
 
     selected_language = st.selectbox(
@@ -136,14 +146,28 @@ with col2:
         list(languages.keys())
     )
 
-    st.info(f"Selected Language: {selected_language}")
-
-    st.metric(
-        label="Character Count",
-        value=len(text)
+    st.info(
+        f"Selected Language: {selected_language}"
     )
 
-# Translate Button
+    word_count = len(text.split()) if text else 0
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.metric(
+            "Characters",
+            len(text)
+        )
+
+    with c2:
+        st.metric(
+            "Words",
+            word_count
+        )
+
+# ---------------- TRANSLATION ---------------- #
+
 if st.button("🚀 Translate Now"):
 
     if text.strip():
@@ -155,14 +179,18 @@ if st.button("🚀 Translate Now"):
                 target=languages[selected_language]
             ).translate(text)
 
-            st.success("✅ Translation Successful")
+            st.success(
+                "✅ Translation Successful"
+            )
 
-            st.markdown("## 📌 Translated Text")
+            st.markdown(
+                "## 📌 Translation Result"
+            )
 
-            st.code(translated_text)
-
-            st.info(
-                "🔊 Voice output is not available in Streamlit Cloud deployment."
+            st.text_area(
+                "Translated Output",
+                translated_text,
+                height=180
             )
 
             st.download_button(
@@ -172,39 +200,54 @@ if st.button("🚀 Translate Now"):
                 mime="text/plain"
             )
 
-            st.session_state.history.append({
-                "input": text,
-                "output": translated_text,
-                "language": selected_language
-            })
+            st.session_state.history.append(
+                {
+                    "input": text,
+                    "output": translated_text,
+                    "language": selected_language
+                }
+            )
 
         except Exception as e:
-            st.error(f"Translation Error: {e}")
+
+            st.error(
+                f"Translation Error: {e}"
+            )
 
     else:
-        st.warning("⚠ Please enter some text")
 
-# Translation History
-if st.session_state.history:
-
-    st.markdown("## 🕘 Translation History")
-
-    for item in reversed(st.session_state.history):
-
-        st.markdown(
-            f"""
-            <div class="history-box">
-                <h4>🌍 {item['language']}</h4>
-                <p><b>Input:</b> {item['input']}</p>
-                <p><b>Output:</b> {item['output']}</p>
-            </div>
-            """,
-            unsafe_allow_html=True
+        st.warning(
+            "⚠ Please enter some text"
         )
 
-# Footer
+# ---------------- HISTORY ---------------- #
+
+if st.session_state.history:
+
+    st.markdown(
+        "## 🕘 Translation History"
+    )
+
+    for item in reversed(
+        st.session_state.history
+    ):
+
+        with st.expander(
+            f"🌍 {item['language']} Translation"
+        ):
+
+            st.write(
+                f"**Input:** {item['input']}"
+            )
+
+            st.write(
+                f"**Output:** {item['output']}"
+            )
+
+# ---------------- FOOTER ---------------- #
+
 st.markdown("---")
 
 st.caption(
-    "Built with ❤️ using Python, Streamlit, Deep Translator & Browser Voice Recognition"
+    "Smart Translator Pro • Powered by Python, Streamlit & AI Translation"
 )
