@@ -1,5 +1,5 @@
 import streamlit as st
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 from utils.languages import languages
 from voice_utils import recognize_speech, speak_text
 
@@ -53,6 +53,7 @@ st.markdown("""
     border-radius: 10px;
     background-color: #1E1E1E;
     margin-bottom: 15px;
+    color: white;
 }
 
 </style>
@@ -64,15 +65,19 @@ st.sidebar.title("🌍 AI Voice Translator")
 st.sidebar.info(
     """
     ### Features
-    ✅ Multi-language translation  
-    ✅ Voice input  
-    ✅ Voice output  
-    ✅ Translation history  
-    ✅ Character counter  
-    ✅ Download translations  
-    ✅ Interactive UI  
+    ✅ Multi-language translation
+    ✅ Voice input
+    ✅ Voice output
+    ✅ Translation history
+    ✅ Character counter
+    ✅ Download translations
+    ✅ Interactive UI
     """
 )
+
+# Initialize history
+if "history" not in st.session_state:
+    st.session_state.history = []
 
 # Clear history
 if st.sidebar.button("🗑 Clear History"):
@@ -90,29 +95,23 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Translator object
-translator = Translator()
-
 # Layout
 col1, col2 = st.columns(2)
 
-# Initialize session state
+# Initialize input text
 if "input_text" not in st.session_state:
     st.session_state.input_text = ""
 
 # LEFT COLUMN
 with col1:
 
-    # Voice input
     if st.button("🎤 Speak"):
-
         spoken_text = recognize_speech()
 
-        st.session_state.input_text = spoken_text
+        if spoken_text:
+            st.session_state.input_text = spoken_text
+            st.success(f"You said: {spoken_text}")
 
-        st.success(f"You said: {spoken_text}")
-
-    # Text area
     text = st.text_area(
         "✍ Enter Text",
         value=st.session_state.input_text,
@@ -120,7 +119,6 @@ with col1:
         placeholder="Type your text here..."
     )
 
-    # Update session state
     st.session_state.input_text = text
 
 # RIGHT COLUMN
@@ -138,50 +136,51 @@ with col2:
         value=len(text)
     )
 
-# Translate button
+# Translate Button
 if st.button("🚀 Translate Now"):
 
-    if text.strip() != "":
+    if text.strip():
 
-        translated = translator.translate(
-            text,
-            dest=languages[selected_language]
-        )
+        try:
 
-        st.success("✅ Translation Successful")
+            translated_text = GoogleTranslator(
+                source="auto",
+                target=languages[selected_language]
+            ).translate(text)
 
-        st.markdown("## 📌 Translated Text")
+            st.success("✅ Translation Successful")
 
-        st.code(translated.text, language=None)
+            st.markdown("## 📌 Translated Text")
 
-        # Speak translation
-        if st.button("🔊 Speak Translation"):
+            st.code(translated_text)
 
-            speak_text(translated.text)
+            # Speak translation
+            if st.button("🔊 Speak Translation"):
+                speak_text(translated_text)
 
-        # Download translation
-        st.download_button(
-            label="⬇ Download Translation",
-            data=translated.text,
-            file_name="translation.txt",
-            mime="text/plain"
-        )
+            # Download button
+            st.download_button(
+                label="⬇ Download Translation",
+                data=translated_text,
+                file_name="translation.txt",
+                mime="text/plain"
+            )
 
-        # Store history
-        if "history" not in st.session_state:
-            st.session_state.history = []
+            # Save history
+            st.session_state.history.append({
+                "input": text,
+                "output": translated_text,
+                "language": selected_language
+            })
 
-        st.session_state.history.append({
-            "input": text,
-            "output": translated.text,
-            "language": selected_language
-        })
+        except Exception as e:
+            st.error(f"Translation Error: {e}")
 
     else:
         st.warning("⚠ Please enter some text")
 
 # Translation History
-if "history" in st.session_state and st.session_state.history:
+if st.session_state.history:
 
     st.markdown("## 🕘 Translation History")
 
@@ -202,5 +201,5 @@ if "history" in st.session_state and st.session_state.history:
 st.markdown("---")
 
 st.caption(
-    "Built with ❤️ using Python, Streamlit, SpeechRecognition & Google Translate API"
+    "Built with ❤️ using Python, Streamlit, Speech Recognition & Deep Translator"
 )
